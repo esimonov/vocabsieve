@@ -84,7 +84,7 @@ def dictinfo(path) -> dict[str, str]:
         return {"type": "audiolib", "basename": basename, "path": path}
     if ext not in supported_dict_extensions:
         raise NotImplementedError("Unsupported format")
-    if ext in ('.json', '.jsonl', '.xz', '.bz2', '.gz'):
+    if ext in ('.json', '.xz', '.bz2', '.gz'):
         with zopen(path) as f:
             try:
                 d = json.load(f)
@@ -108,9 +108,14 @@ def dictinfo(path) -> dict[str, str]:
                 f.seek(0)
                 first_line = f.readline()
                 logger.debug("First line of bad json file: ", first_line)
+                raise NotImplementedError(f"File {path} is not a supported json format")
+    elif ext == ".jsonl":
+        with zopen(path) as f:
+            first_line = f.readline()
+
+            if json.loads(first_line):
                 logger.debug("Detected Kaikki wiktionary dump")
-                if json.loads(first_line):
-                    return {"type": "wiktdump", "basename": basename, "path": path}
+                return {"type": "wiktdump", "basename": basename, "path": path}
             raise NotImplementedError(f"File {path} is not a supported json format")
     elif ext == ".ifo":
         return {"type": "stardict", "basename": basename, "path": path}
