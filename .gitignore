@@ -1,6 +1,7 @@
 __pycache__/
 env/
 dist/
+.DS_Store
 *.un~
 vocabsieve.egg-info/
 build/
@@ -12,5 +13,8 @@ htmlcov
 docs/_site
 docs/.jekyll-cache
 .vscode
-testdata
 testdir
+
+testdata/kaikki/*
+!kaikki.org-dictionary-English-by-pos-postp.jsonl
+!kaikki.org-dictionary-English-by-pos-postp.jsonl.gz
