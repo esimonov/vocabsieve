@@ -128,10 +128,6 @@ def dictinfo(path) -> dict[str, str]:
                 first_line = f.readline()
                 logger.debug("First line of bad json file: ", first_line)
                 raise NotImplementedError(f"File {path} is not a supported json format")
-    elif ext == ".jsonl":
-        with zopen(path) as f:
-            first_line = f.readline()
-            raise NotImplementedError(f"File {path} is not a supported json format")
     elif ext == ".ifo":
         return {"type": "stardict", "basename": basename, "path": path}
     elif ext == ".mdx":
