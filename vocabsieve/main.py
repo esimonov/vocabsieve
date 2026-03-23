@@ -7,8 +7,7 @@ import time
 import re
 from datetime import datetime
 from typing import Optional, cast
-import requests
-from packaging import version
+
 import platform
 import json
 from loguru import logger
@@ -54,7 +53,6 @@ from .uncaught_hook import ExceptionCatcher
 
 
 class MainWindow(MainWindowBase):
-    got_updates = pyqtSignal(list)
     polled_clipboard_changed = pyqtSignal()
     polled_selection_changed = pyqtSignal()
 
@@ -78,10 +76,8 @@ class MainWindow(MainWindowBase):
         self.setupButtons()
         self.startServer()
         self.setupShortcuts()
-        self.checkUpdatesOnThread()
         self.initSources()
         self.initTimers()
-        self.got_updates.connect(self.gotUpdatesInfo)
 
         self.setupClipboardMonitor()
         self.setMinimumWidth(settings.value("minimum_width", 550, type=int))
@@ -176,47 +172,7 @@ class MainWindow(MainWindowBase):
             self.audio_sg = AudioSourceGroup([])
         self.audio_selector.setSourceGroup(self.audio_sg)
 
-    @pyqtSlot()
-    def checkUpdatesOnThread(self) -> None:
-        print("Started checking updates")
-        if settings.value("check_updates") is None:
-            answer = QMessageBox.question(
-                None,
-                "Check updates",
-                "<h2>Would you like VocabSieve to check for updates automatically on launch?</h2>"
-                "Currently, the repository and releases are hosted on GitHub's servers, "
-                "which will be queried for checking updates. <br>VocabSieve cannot and "
-                "<strong>will not</strong> install any updates automatically."
-                "<br>You can change this option in the configuration panel at any time."
-            )
-            if answer == QMessageBox.Yes:
-                settings.setValue("check_updates", True)
-            if answer == QMessageBox.No:
-                settings.setValue("check_updates", False)
-            settings.sync()
-        if settings.value("check_updates", True, type=bool):
-            self.thread_manager.start(self.checkUpdates)
-        print("Finished checking updates")
 
-    def checkUpdates(self) -> None:
-        res = requests.get("https://api.github.com/repos/FreeLanguageTools/vocabsieve/releases", timeout=5)
-        data = res.json()
-        self.got_updates.emit(data)
-
-    def gotUpdatesInfo(self, data: dict) -> None:
-        latest_version = (current := data[0])['tag_name'].strip('v')
-        current_version = importlib.metadata.version('vocabsieve')
-        if version.parse(latest_version) > version.parse(current_version):
-            answer2 = QMessageBox.information(
-                None,
-                "New version",
-                "<h2>There is a new version available!</h2>"
-                + f"<h3>Version {latest_version}</h3>"
-                + markdown(current['body']),
-                buttons=QMessageBox.Open | QMessageBox.Ignore
-            )
-            if answer2 == QMessageBox.Open:
-                QDesktopServices.openUrl(QUrl(current['html_url']))
 
     def setupButtons(self) -> None:
         self.web_button.clicked.connect(self.onWebButton)

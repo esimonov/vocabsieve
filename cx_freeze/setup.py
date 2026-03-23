@@ -1,6 +1,7 @@
 import sys
 import os
 import platform
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from vocabsieve import __version__
 from cx_Freeze import setup, Executable  # pylint: disable=import-error
 
@@ -35,15 +36,12 @@ build_exe_options = {
         "markdown",
         "requests",
         "markdownify",
-        "lzo",
-        "readmdict",
         "packaging",
         "waitress"
     ],
     "include_files": include_files,
     "zip_include_packages": ["PyQt5"],
     "excludes": ["tkinter"],
-    "bin_includes": ["liblzo2.so"],
     "include_msvcr": True,
     "silent_level": 1
 }
@@ -54,13 +52,13 @@ WINDOWS_OUTPUT_NAME = f"VocabSieve-v{__version__}-DEBUG-win64.msi"
 SCRIPT = "app.py"
 if sys.platform == "win32" and not os.environ.get("VOCABSIEVE_DEBUG_BUILD"):
     # If we are on a non-debug build on Windows, we want to use the GUI base to hide the console window
-    base = "Win32GUI"
+    base = "gui"
     WINDOWS_OUTPUT_NAME = f"VocabSieve-v{__version__}-win64.msi"
     SCRIPT = "app_win32.py"
 
 bdist_msi_options = {
     "upgrade_code": "{F10E2AE2-7629-3CA2-AA85-498478E708D7}",
-    "target_name": WINDOWS_OUTPUT_NAME
+    "output_name": WINDOWS_OUTPUT_NAME
 }
 
 # x86_64 or arm64

@@ -1,6 +1,5 @@
 from typing import TextIO
 from loguru import logger
-from readmdict import MDX
 from bidict import bidict
 import os
 import re
@@ -20,7 +19,6 @@ supported_dict_formats = bidict({
     "wiktdump": "Wiktionary dump",
     "freq": "Frequency list",
     "audiolib": "Audio Library",
-    "mdx": "MDX",
     "dsl": "Lingvo DSL",
     "csv": "CSV",
     "tsv": "TSV (Tabfile)",
@@ -28,7 +26,7 @@ supported_dict_formats = bidict({
 })
 
 supported_dict_extensions = [
-    ".json", ".jsonl", ".ifo", ".mdx", ".dsl", ".dz", ".csv", ".tsv", ".xz", ".bz2", ".gz"
+    ".json", ".jsonl", ".ifo", ".dsl", ".dz", ".csv", ".tsv", ".xz", ".bz2", ".gz"
 ]
 
 
@@ -130,8 +128,6 @@ def dictinfo(path) -> dict[str, str]:
                 raise NotImplementedError(f"File {path} is not a supported json format")
     elif ext == ".ifo":
         return {"type": "stardict", "basename": basename, "path": path}
-    elif ext == ".mdx":
-        return {"type": "mdx", "basename": basename, "path": path}
     elif ext == ".dsl":
         return {"type": "dsl", "basename": basename, "path": path}
     elif ext == ".dz":
@@ -145,38 +141,6 @@ def dictinfo(path) -> dict[str, str]:
         return {"type": "csv", "basename": basename, "path": path}
     else:
         raise NotImplementedError("Unsupported format" + basename + ext)
-
-
-def parseMDX(path) -> dict[str, str]:
-    mdx = MDX(path)
-    stylesheet_lines = mdx.header[b'StyleSheet'].decode().splitlines()
-    stylesheet_map: dict[int, str] = {}
-    for line in stylesheet_lines:
-        if line.isnumeric():
-            number = int(line)
-            stylesheet_map[number] = stylesheet_map.get(number, "") + line
-    newdict: dict[str, str] = {}  # This temporarily stores the new entries
-    prev_headword = ""
-    for item in mdx.items():
-        headword_bytes, entry_bytes = item
-        headword = headword_bytes.decode()
-        entry = entry_bytes.decode()  # type: ignore
-        # The following applies the stylesheet
-        if stylesheet_map:
-            entry = re.sub(
-                r'`(\d+)`',
-                lambda g: stylesheet_map.get(int(g.group().strip('`'))),  # type:ignore
-                entry
-            )
-        entry = entry.replace("\n", "").replace("\r", "")
-        # Using newdict.get would become incredibly slow,
-        # here we exploit the fact that they are alphabetically ordered
-        if prev_headword == headword:
-            newdict[headword] = newdict[headword] + entry
-        else:
-            newdict[headword] = entry
-        prev_headword = headword
-    return newdict
 
 
 def parseDSL(path) -> dict[str, str]:

@@ -5,7 +5,6 @@ from .base_tab import BaseTab
 
 class NetworkTab(BaseTab):
     def initWidgets(self):
-        self.check_updates = QCheckBox("Check for updates")
         self.reader_enabled = QCheckBox("Enable VocabSieve Web Reader")
         self.reader_host = QLineEdit()
         self.reader_port = QSpinBox()
@@ -27,7 +26,6 @@ class NetworkTab(BaseTab):
             '◊ All settings on this tab require a restart to take effect.'
             '<br>◊ Most users should not need to change these settings.</i>'
         ))
-        layout.addRow(self.check_updates)
         #layout.addRow(QLabel("<h4>Local API</h4>"))
         #layout.addRow(self.api_enabled)
         #layout.addRow(QLabel("API host"), self.api_host)
@@ -45,8 +43,6 @@ class NetworkTab(BaseTab):
         self.reader_port.setEnabled(self.reader_enabled.isChecked())
 
     def setupAutosave(self):
-        self.register_config_handler(self.check_updates, 'check_updates', False, True)
-
         #self.api_enabled.clicked.connect(self.setAvailable)
         self.reader_enabled.clicked.connect(self.setAvailable)
 

@@ -3,7 +3,7 @@ from ast import parse
 import sqlite3
 import os
 
-from .dictformats import parseMDX, parseDSL, parseCSV, parseTSV, xdxf2text, zopen, parseKaikki
+from .dictformats import parseDSL, parseCSV, parseTSV, xdxf2text, zopen, parseKaikki
 from .lemmatizer import removeAccents
 from pystardict import Dictionary
 import json
@@ -206,8 +206,6 @@ class LocalDictionary():
             for word, audios in list_d.items():
                 d[word] = json.dumps(audios)
             self.importdict(d, lang, name)
-        elif dicttype == 'mdx':
-            d = parseMDX(path)
             self.importdict(d, lang, name)
         elif dicttype == "dsl":
             d = parseDSL(path)

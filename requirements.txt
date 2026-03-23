@@ -22,8 +22,6 @@ markdown
 pyqtgraph
 pyqtdarktheme-fork
 markdownify
-readmdict
-python-lzo
 packaging
 typing_extensions
 loguru
