@@ -1,6 +1,8 @@
 __pycache__/
 env/
 dist/
+.venv
+recipe
 .DS_Store
 *.un~
 vocabsieve.egg-info/
