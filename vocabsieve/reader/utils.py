@@ -35,28 +35,6 @@ def tohtml(s):
                 s,
                 encoding='utf8')).best()).strip()
 
-
-def parseEpub(path: str) -> dict:
-    book = epub.read_epub(path)
-    title = book.get_metadata('DC', 'title') or ""
-    author = book.get_metadata('DC', 'creator') or ""
-    chapters = []
-    for doc in book.get_items_of_type(ebooklib.ITEM_DOCUMENT):
-        tree = etree.fromstring(doc.get_content())
-        notags = etree.tostring(tree, encoding='utf8')
-        data = markdownify(fix_hyphen(str(from_bytes(notags).best()).strip()))
-        if len(data.splitlines()) < 2:
-            continue
-        ch_name = data.splitlines()[0]
-        content = "\n".join(data.splitlines()[1:])
-        chapters.append(f"## {ch_name}\n" + content)
-    return {
-        "title": title[0][0],
-        "author": author[0][0],
-        "chapters": [markdown(chapter) for chapter in chapters]
-    }
-
-
 def parseFb2(path: str) -> dict:
     with open(path, 'rb') as f:
         data = f.read()
@@ -91,20 +69,10 @@ def parseFb2(path: str) -> dict:
         "chapters": [markdown(chapter) for chapter in chapters]
     }
 
-
-def parseBook(path) -> Optional[dict]:
-    if os.path.splitext(path)[1] == ".epub":
-        return parseEpub(path)
-    elif os.path.splitext(path)[1] == ".fb2":
-        return parseFb2(path)
-    else:
-        raise NotImplementedError("Filetype not supported")
-
-
 def getEpubMetadata(path: str) -> Dict[str, str]:
     book = epub.read_epub(path)
-    title = book.get_metadata('DC', 'title') or ""
-    author = book.get_metadata('DC', 'creator') or ""
+    title = book.get_metadata('DC', 'title') or ["no title", "no title"]
+    author = book.get_metadata('DC', 'creator') or ["no author", "no author"]
     return {
         "title": title[0][0],
         "author": author[0][0]
