@@ -198,13 +198,35 @@ img {
 }
 
 .hint {
-  font-size: 0.8rem;
-  opacity: 0.6;
+  font-size: 1rem;
+  font-weight: bold;
+  margin-top: 0.4rem;
 }
 
 .hint a {
-  color: var(--text-main-color);
-  opacity: 0.6;
+  color: var(--bg-title-color);
+  background-color: rgba(0,0,0,0.08);
+  padding: 0.2rem 0.6rem;
+  border-radius: 4px;
+  border: 1px solid var(--bg-title-color);
+}
+
+.hint-toggle {
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.hint-content {
+  display: none;
+  letter-spacing: 0.15em;
+  font-weight: bold;
+  text-decoration: underline;
+  color: var(--bg-title-color);
+  background-color: rgba(0,0,0,0.08)
+}
+
+.typebox {
+  font-size: 1.2em;
 }
 
 .notes {
@@ -255,5 +277,57 @@ CARDS = [
         "Name": "Card 1",
         "Front": FRONT,
         "Back": BACK
+    }
+]
+
+
+# Dedicated note type for the typing ("production") card. VocabSieve creates a
+# second, independent note on this model whenever Definition#2 is filled in.
+# The fields are filled entirely from Python (see createNote), so there is no
+# template logic to extract the prompt or scramble the hint.
+TYPING_MODEL_NAME = "vocabsieve-typing"
+
+# Front: the prompt (first line of Definition#2). Word: the answer, typed in.
+# Hint: the answer's letters scrambled, revealed on click. Definition: shown on
+# the back for context.
+TYPING_FIELDS = ["Front", "Word", "Hint", "Definition"]
+
+TYPING_FRONT = '''<div class="widget front">
+
+  <div class="title">Which word means this?</div>
+  <div class="box nativeLang">
+    <div class="question">{{Front}}</div>
+  </div>
+
+  <div class="box typebox">{{type:Word}}</div>
+
+  {{#Hint}}<div class="hint">
+    <a class="hint-toggle" href="#" onclick="this.nextElementSibling.style.display='inline-block';this.style.display='none';return false;">Show hint</a><span class="hint-content">{{Hint}}</span>
+  </div>{{/Hint}}
+
+</div>
+'''
+
+TYPING_BACK = '''{{FrontSide}}
+
+<hr id=answer>
+
+<div class="widget back">
+
+  <div class="box targetLang">
+    <div class="question"><b>{{Word}}</b></div>
+  </div>
+
+	{{#Definition}}<div class="box nativeLang answer">{{Definition}}</div>{{/Definition}}
+
+{{#Tags}}<div class="tags">{{Tags}}</div>{{/Tags}}
+
+</div>'''
+
+TYPING_CARDS = [
+    {
+        "Name": "Reverse with typing",
+        "Front": TYPING_FRONT,
+        "Back": TYPING_BACK
     }
 ]

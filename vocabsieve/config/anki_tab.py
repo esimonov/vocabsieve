@@ -1,7 +1,7 @@
 from .base_tab import BaseTab
 from PyQt5.QtWidgets import QLabel, QFormLayout, QPushButton, QComboBox, QCheckBox, QLineEdit
 from PyQt5.QtCore import pyqtSlot
-from ..tools import addDefaultModel, getDeckList, getNoteTypes, getFields, getVersion
+from ..tools import addDefaultModel, addTypingModel, getDeckList, getNoteTypes, getFields, getVersion
 from ..global_names import settings, logger
 
 
@@ -141,8 +141,16 @@ class AnkiTab(BaseTab):
         logger.debug("Fields loaded")
 
     def onDefaultNoteType(self):
+        api = settings.value("anki_api", 'http://127.0.0.1:8765')
         try:
-            addDefaultModel(settings.value("anki_api", 'http://127.0.0.1:8765'))
+            addDefaultModel(api)
+        except Exception as e:
+            logger.error(e)
+        # Also create the dedicated typing note type used for the second
+        # (Definition#2 -> type the word) card. Created independently so that an
+        # already-existing main model does not prevent it from being added.
+        try:
+            addTypingModel(api)
         except Exception as e:
             logger.error(e)
         self.loadDecks()

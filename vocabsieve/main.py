@@ -35,6 +35,8 @@ from .tools import (
     make_audio_source_group,
     modelFieldNames,
     prepareAnkiNoteDict,
+    prepareTypingNoteDict,
+    first_line,
     is_oneword,
     addNote,
     findNotes,
@@ -43,6 +45,7 @@ from .tools import (
     getVersion,
     make_freq_source,
     remove_punctuations,
+    scramble_word,
     unix_milliseconds_to_datetime_str,
     apply_word_rules)
 from .ui import MainWindowBase, WordMarkingDialog
@@ -926,38 +929,58 @@ class MainWindow(MainWindowBase):
 
         logger.info("Creating note")
 
+        definition2 = self.definition2.toAnki()
+
         note = SRSNote(
             word=self.word.text(),
             sentence=sentence,
             definition1=self.definition.toAnki(),
-            definition2=self.definition2.toAnki(),
+            definition2=definition2,
             audio_path=self.audio_selector.current_audio_path,
             image=self.image_path,
             tags=settings.value("tags", "vocabsieve").strip().split() + self.tags.text().strip().split()
         )
 
+        api = settings.value("anki_api", "http://127.0.0.1:8765")
         content = prepareAnkiNoteDict(anki_settings, note)
         logger.debug("Prepared Anki note json" + json.dumps(content, indent=4, ensure_ascii=False))
         try:
-            self.last_added_note_id = addNote(
-                settings.value("anki_api", "http://127.0.0.1:8765"),
-                content,
-                allow_duplicates
-            )
+            self.last_added_note_id = addNote(api, content, allow_duplicates)
             self.rec.recordNote(note, json.dumps(content, indent=4, ensure_ascii=False))
-            self.status("Added note to Anki")
-            # Clear fields
-            self.setImage(None)
-            self.sentence.setText("")
-            self.word.setText("")
-            self.definition.reset()
-            self.definition2.reset()
-            self.audio_selector.clear()
-            self.previous_word = ""
             logger.info("Note added to Anki")
         except Exception as e:
             logger.error("Failed to add note to Anki: " + repr(e))
             return
+
+        # When Definition#2 is present, also create a second, independent note
+        # for the typing ("production") card on the dedicated typing model.
+        # The prompt is the first line of Definition#2 and the hint is the
+        # scrambled answer (Anki templates have no RNG, so both are built here).
+        if definition2:
+            typing_content = prepareTypingNoteDict(
+                deck=anki_settings.deck,
+                front=first_line(definition2),
+                word=self.word.text(),
+                hint=scramble_word(self.word.text()),
+                definition=self.definition.toAnki(),
+                tags=note.tags,
+            )
+            logger.debug("Prepared typing note json" + json.dumps(typing_content, indent=4, ensure_ascii=False))
+            try:
+                addNote(api, typing_content, allow_duplicates)
+                logger.info("Typing note added to Anki")
+            except Exception as e:
+                logger.error("Failed to add typing note to Anki: " + repr(e))
+
+        self.status("Added note to Anki")
+        # Clear fields
+        self.setImage(None)
+        self.sentence.setText("")
+        self.word.setText("")
+        self.definition.reset()
+        self.definition2.reset()
+        self.audio_selector.clear()
+        self.previous_word = ""
 
     def viewLastNote(self) -> None:
         self.guiBrowseNote(self.last_added_note_id)

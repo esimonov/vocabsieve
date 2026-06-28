@@ -2,13 +2,15 @@ from functools import lru_cache
 import json
 import urllib.request
 import os
+import random
 import re
 import unicodedata
 from itertools import zip_longest, islice
 import time
 
 from .constants import FORVO_HEADERS
-from .vsnt import FIELDS, CARDS, CSS
+from .vsnt import (FIELDS, CARDS, CSS,
+                   TYPING_MODEL_NAME, TYPING_FIELDS, TYPING_CARDS)
 from bs4 import BeautifulSoup
 from typing import List, Optional
 from .local_dictionary import LocalDictionary
@@ -79,6 +81,36 @@ def getFields(server, name) -> list:
     return list(result)
 
 
+def first_line(text: str) -> str:
+    """Return only the first line of a (possibly HTML) string.
+
+    VocabSieve separates definition lines with <br>, so split on the first <br>
+    (in any form) or a literal newline and strip surrounding whitespace. Used to
+    build the typing card's prompt from Definition#2.
+    """
+    if not text:
+        return text
+    return re.split(r"<br\s*/?>|\n", text, maxsplit=1, flags=re.IGNORECASE)[0].strip()
+
+
+def scramble_word(word: str) -> str:
+    """Return the word with its letters in a random order.
+
+    Used to build the "Hint" field of the typing card: it reveals which letters
+    make up the answer without giving away their order. Best-effort to produce a
+    result that differs from the original word so the hint is not a giveaway.
+    """
+    chars = list(word)
+    if len(chars) < 2:
+        return word
+    for _ in range(10):
+        random.shuffle(chars)
+        scrambled = "".join(chars)
+        if scrambled != word:
+            return scrambled
+    return "".join(chars)
+
+
 def prepareAnkiNoteDict(anki_settings: AnkiSettings, note: SRSNote) -> dict:
     """
     Helper function to create a json to be sent to AnkiConnect
@@ -125,6 +157,30 @@ def prepareAnkiNoteDict(anki_settings: AnkiSettings, note: SRSNote) -> dict:
             }
         ]
     return content
+
+
+def prepareTypingNoteDict(deck: str, front: str, word: str, hint: str,
+                          definition: Optional[str] = None,
+                          tags: Optional[list[str]] = None) -> dict:
+    """Build the AnkiConnect payload for the typing ("production") card.
+
+    This is a second, independent note on the TYPING_MODEL_NAME model, created
+    when Definition#2 is present. The front shows ``front`` (the first line of
+    Definition#2), the user types the Word, and ``hint`` is the scrambled word.
+    """
+    fields = {
+        "Front": front or "",
+        "Word": word or "",
+        "Hint": hint or "",
+    }
+    if definition:
+        fields["Definition"] = definition
+    return {
+        "deckName": deck,
+        "modelName": TYPING_MODEL_NAME,
+        "fields": fields,
+        "tags": list(tags) if tags else [],
+    }
 
 
 def unix_milliseconds_to_datetime_str(ms: int):
@@ -181,6 +237,16 @@ def addDefaultModel(server):
                   inOrderFields=FIELDS,
                   css=CSS,
                   cardTemplates=CARDS
+                  )
+
+
+def addTypingModel(server):
+    return invoke('createModel',
+                  server,
+                  modelName=TYPING_MODEL_NAME,
+                  inOrderFields=TYPING_FIELDS,
+                  css=CSS,
+                  cardTemplates=TYPING_CARDS
                   )
 
 
