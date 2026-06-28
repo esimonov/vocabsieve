@@ -718,15 +718,17 @@ class MainWindow(MainWindowBase):
             logger.error(f"Could not obtain fields for note type {note_type}")
             self.note_type_first_field = ""
             return []
+        deck_name = settings.value("deck_name", "Default")
+        deck_filter = f"deck:\"{deck_name}\""
         if fields[0] == settings.value("word_field"):
             logger.info(
-                f'First field is word field, trying to find a note with field "{fields[0]}" having value "{word}"')
-            find_query = f"\"{fields[0]}:{word}\""
+                f'First field is word field, trying to find a note with field "{fields[0]}" having value "{word}" in deck "{deck_name}"')
+            find_query = f"{deck_filter} \"{fields[0]}:{word}\""
             self.note_type_first_field = "word"
         elif fields[0] == settings.value("sentence_field"):
             logger.info(
-                f'First field is sentence field, trying to find a note with field "{fields[0]}" having value "{sentence}"')
-            find_query = f"\"{fields[0]}:{sentence}\""
+                f'First field is sentence field, trying to find a note with field "{fields[0]}" having value "{sentence}" in deck "{deck_name}"')
+            find_query = f"{deck_filter} \"{fields[0]}:{sentence}\""
             self.note_type_first_field = "sentence"
         else:
             logger.error(f"First field is neither word field nor sentence field, skipping checking for duplicates")
