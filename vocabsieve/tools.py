@@ -124,7 +124,10 @@ def prepareAnkiNoteDict(anki_settings: AnkiSettings, note: SRSNote) -> dict:
             anki_settings.definition1_field: note.definition1 or "",
             anki_settings.definition2_field: note.definition2 or ""
         },
-        "tags": []
+        "tags": [],
+        "options": {
+            "duplicateScope": "deck",
+        }
     }
     if anki_settings.tags:
         content["tags"].extend(anki_settings.tags)  # type: ignore
@@ -180,6 +183,9 @@ def prepareTypingNoteDict(deck: str, front: str, word: str, hint: str,
         "modelName": TYPING_MODEL_NAME,
         "fields": fields,
         "tags": list(tags) if tags else [],
+        "options": {
+            "duplicateScope": "deck",
+        }
     }
 
 
